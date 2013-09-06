@@ -4,15 +4,16 @@ import husacct.common.dto.AbstractDTO;
 import husacct.graphics.task.DrawingController;
 
 public class DrawingSingleLevelThread implements Runnable {
-
-	private DrawingController controller;
-	private AbstractDTO[] toDrawModules;
-
-	public DrawingSingleLevelThread(DrawingController theController, AbstractDTO[] modules) {
+	
+	private DrawingController	controller;
+	private AbstractDTO[]		toDrawModules;
+	
+	public DrawingSingleLevelThread(DrawingController theController,
+			AbstractDTO[] modules) {
 		controller = theController;
 		toDrawModules = modules;
 	}
-
+	
 	@Override
 	public void run() {
 		try {
@@ -23,5 +24,5 @@ public class DrawingSingleLevelThread implements Runnable {
 			e.printStackTrace();
 		}
 	}
-
+	
 }

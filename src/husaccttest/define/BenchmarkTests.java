@@ -1,12 +1,11 @@
-package husaccttest.define;
+/*package husaccttest.define;
 
 import husacct.ServiceProvider;
 import husacct.common.dto.CategoryDTO;
 import husacct.common.dto.RuleTypeDTO;
 import husacct.common.dto.ViolationTypeDTO;
-import husacct.define.domain.AppliedRule;
 import husacct.define.domain.SoftwareArchitecture;
-import husacct.define.domain.module.ExternalLibrary;
+import husacct.define.domain.module.ExternalSystem;
 import husacct.define.domain.module.Layer;
 import husacct.define.domain.module.Module;
 import husacct.define.domain.module.SubSystem;
@@ -25,7 +24,7 @@ public class BenchmarkTests {
 		Module layer1 = new Layer("Presentation layer", "", 1);
 		Module layer2 = new Layer("Domain layer", "", 2);
 		Module layer3 = new Layer("Infrastructure layer", "", 3);
-		Module externalLibrary1 = new ExternalLibrary("lib", "");
+		Module externalLibrary1 = new ExternalSystem("lib", "");
 		
 		//layer 1
 		Module module1 = new SubSystem("gui", "");
@@ -92,16 +91,16 @@ public class BenchmarkTests {
 		//external library 1
 		
 		
-		sA.addModule(layer1);
-		sA.addModule(layer2);
-		sA.addModule(layer3);
-		sA.addModule(externalLibrary1);
+		sA.addSeperatedModule(layer1);
+		sA.addSeperatedModule(layer2);
+		sA.addSeperatedModule(layer3);
+		sA.addSeperatedModule(externalLibrary1);
 		
 		//Rules
-		AppliedRule rule1 = new AppliedRule("IsOnlyModuleAllowedToUse", "Only the classes in package infrastructure.socialmedia are only allowed to use the JDBC library (derbyclient.jar)", 
-				getViolationTypeByRuleType("IsOnlyModuleAllowedToUse"),	"", module25, externalLibrary1, true);
+//		AppliedRule rule1 = new AppliedRule("IsTheOnlyModuleAllowedToUse", "Only the classes in package infrastructure.socialmedia are only allowed to use the JDBC library (derbyclient.jar)", 
+//				getViolationTypeByRuleType("IsTheOnlyModuleAllowedToUse"),	"", module25, externalLibrary1, true);
 		
-		sA.addAppliedRule(rule1);
+		//sA.addAppliedRule(rule1);
 	}
 	
 	private String[] getViolationTypeByRuleType(String ruleTypeKey){
@@ -127,3 +126,4 @@ public class BenchmarkTests {
 	
 	
 
+*/

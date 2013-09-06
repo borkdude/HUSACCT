@@ -2,6 +2,7 @@ package husacct.define.presentation.jdialog;
 
 import husacct.ServiceProvider;
 import husacct.common.Resource;
+import husacct.common.help.presentation.HelpableJDialog;
 import husacct.control.ControlServiceImpl;
 import husacct.define.presentation.jpanel.ruledetails.AbstractDetailsJPanel;
 import husacct.define.presentation.jpanel.ruledetails.FactoryDetails;
@@ -25,12 +26,11 @@ import java.util.HashMap;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.WindowConstants;
 
-public class ExceptionRuleJDialog  extends JDialog implements KeyListener, ActionListener, ItemListener{
+public class ExceptionRuleJDialog  extends HelpableJDialog implements KeyListener, ActionListener, ItemListener{
 
 	private static final long serialVersionUID = -3491664038962722000L;
 	
@@ -80,7 +80,7 @@ public class ExceptionRuleJDialog  extends JDialog implements KeyListener, Actio
 			getContentPane().add(this.createButtonPanel(), BorderLayout.SOUTH);
 //			this.setResizable(false);
 			this.pack();
-			this.setSize(820, 620);
+			this.setSize(820, 560);
 		} catch (Exception e) {
 			// add your error handling code here
 			e.printStackTrace();
@@ -182,7 +182,7 @@ public class ExceptionRuleJDialog  extends JDialog implements KeyListener, Actio
 			HashMap<String, Object> ruleDetails = this.ruleDetailsJPanel.saveToHashMap();
 			String ruleTypeKey = this.exceptionRuleKeyValueComboBox.getSelectedItemKey();
 			ruleDetails.put("ruleTypeKey", ruleTypeKey);	
-			this.appliedRuleController.addException(ruleDetails);
+			appliedRuleController.addException(ruleDetails);
 			this.appliedRuleFrame.updateExceptionTable();
 			this.dispose();
 		} else {

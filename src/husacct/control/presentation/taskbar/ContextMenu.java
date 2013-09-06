@@ -25,6 +25,7 @@ public class ContextMenu extends JPopupMenu{
 	
 	private JMenuItem maximize;
 	private JMenuItem restore;
+	private JMenuItem minimize;
 	private JMenuItem close;
 	
 	public ContextMenu(JInternalFrame internalFrame){
@@ -38,10 +39,12 @@ public class ContextMenu extends JPopupMenu{
 		
 		maximize = new JMenuItem(localeService.getTranslatedString("Maximize"));
 		restore = new JMenuItem(localeService.getTranslatedString("Restore"));
+		minimize = new JMenuItem(localeService.getTranslatedString("Minimize"));
 		close = new JMenuItem(localeService.getTranslatedString("Close"));
 		
 		add(maximize);
 		add(restore);
+		add(minimize);
 		add(close);
 	}
 	
@@ -72,6 +75,20 @@ public class ContextMenu extends JPopupMenu{
 			}
 		});
 		
+		minimize.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent event) {
+				try {
+					internalFrame.setIcon(true);
+					internalFrame.setVisible(false);
+					deactivateFrame(internalFrame);
+				} catch (PropertyVetoException e) {
+					logger.debug(e.getMessage());
+				}
+				activateFrame(internalFrame);
+			}
+		});
+		
 		close.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent event) {
@@ -88,5 +105,15 @@ public class ContextMenu extends JPopupMenu{
 		} catch (PropertyVetoException event) {
 			logger.debug(event.getMessage());
 		}
+	}
+	
+	private void deactivateFrame(JInternalFrame internalFrame){
+		DesktopManager manager = internalFrame.getDesktopPane().getDesktopManager();
+		manager.deactivateFrame(internalFrame);
+		try {
+			internalFrame.setSelected(false);
+		} catch (PropertyVetoException event) {
+			logger.debug(event.getMessage());
+		}		
 	}
 }

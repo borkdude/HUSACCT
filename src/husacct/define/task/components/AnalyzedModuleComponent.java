@@ -4,69 +4,161 @@ import java.util.ArrayList;
 
 public class AnalyzedModuleComponent extends AbstractCombinedComponent {
 
-	private static final long serialVersionUID = 1713515026043620607L;
-	
-	private String uniqueName = "";
-	private String type = "";
-	private String visibility;
-	
-	public AnalyzedModuleComponent() {
-		super();
+    private static final long serialVersionUID = 1713515026043620607L;
+
+    private boolean attached = true;
+    private boolean isfrozen = false;
+    private boolean isRemoved = false;
+    private String visibility;
+
+    public AnalyzedModuleComponent() {
+	super();
+    }
+
+    public AnalyzedModuleComponent(String uniqueName, String name, String type,
+	    String visibility) {
+	this();
+	setUniqueName(uniqueName);
+	setName(name);
+	setType(type);
+	setVisibility(visibility);
+	if (uniqueName.equals("root")) {
+	    setParentOfChild(this);
 	}
-	
-	public AnalyzedModuleComponent(String uniqueName, String name, String type, String visibility) {
-		this();
-		this.setUniqueName(uniqueName);
-		this.setName(name);
-		this.setType(type);
-		this.setVisibility(visibility);
+    }
+
+    @Override
+    public void addChild(AbstractCombinedComponent child) {
+	if (attached) {
+	    child.setParentOfChild(this);
+	    child.setAnalyzedModuleComponentPosition(children.size());
+	}
+	children.add(child);
+    }
+
+    @Override
+    public void addChild(int index, AbstractCombinedComponent child) {
+	if (attached) {
+	    child.setParentOfChild(this);
+	    child.setAnalyzedModuleComponentPosition(index);
+	}
+	children.add(index, child);
+    }
+
+    public void attach() {
+	attached = true;
+    }
+
+    public void detach() {
+	attached = false;
+    }
+
+    public void freeze() {
+	isfrozen = true;
+    }
+
+    @Override
+    public ArrayList<AbstractCombinedComponent> getChildren() {
+
+	return children;
+    }
+
+    public String getVisibility() {
+	return visibility;
+    }
+
+    public boolean isComplete() {
+	if (type.toLowerCase().equals("package")
+		|| type.toLowerCase().equals("externallibrary")) {
+	    if (children.size() < sizeOfChildren) {
+		return false;
+	    } else {
+		return true;
+	    }
+
+	} else {
+	    return true;
 	}
 
-	public void addChild(AbstractCombinedComponent child) {
-		this.children.add(child);
-	}
-	
-	public void addChild(int index, AbstractCombinedComponent child) {
-		this.children.add(index, child);
-	}
+    }
 
-	public void setChildren(ArrayList<AbstractCombinedComponent> children) {
-		this.children = children;
-	}
+    public boolean isIsfrozen() {
+	return isfrozen;
 
-	public ArrayList<AbstractCombinedComponent> getChildren() {
-		return this.children;
-	}
+    }
 
-	public void removeChild(AbstractCombinedComponent child) {
-		for(AbstractCombinedComponent currentchild : this.children) {
-			if(currentchild.equals(child)) {
-				this.children.remove(currentchild);
-			}
+    public boolean isMapped() {
+
+	return isfrozen;
+    }
+
+    public boolean isRemoved() {
+	return isRemoved;
+    }
+
+    public void registerchildrenSize() {
+	sizeOfChildren = getChildren().size();
+
+    }
+
+    @Override
+    public void removeChild(AbstractCombinedComponent child) {
+	for (AbstractCombinedComponent currentchild : children) {
+	    if (currentchild.equals(child)) {
+		children.remove(currentchild);
+	    }
+	}
+    }
+
+    public void removeChildFromParent() {
+	isRemoved = true;
+    }
+
+    @Override
+    public void setChildren(ArrayList<AbstractCombinedComponent> children) {
+	if (attached) {
+	    for (AbstractCombinedComponent a : children) {
+
+		a.setParentOfChild(this);
+	    }
+
+	}
+	this.children = children;
+    }
+
+    public void setVisibility(String visibility) {
+	this.visibility = visibility;
+    }
+
+    public void unfreeze() {
+	isfrozen = false;
+
+    }
+
+	public boolean isAncestorsMapped() {
+		boolean result = false;
+		AnalyzedModuleComponent buffer =null;
+		String type = this.getType().toLowerCase();
+		buffer = (AnalyzedModuleComponent) this.getParentofChild();
+		while (!type.equals("application")) {
+		if (buffer.isMapped()) {
+			result =true;
+		    break;
+		
+		
+		}else{	
+		type=buffer.getParentofChild().getType().toLowerCase();
+		buffer=buffer.getParentofChild();
 		}
+		}
+		
+		
+		
+		
+		return result;
 	}
 
-	public void setUniqueName(String uniqueName) {
-		this.uniqueName = uniqueName;
-	}
+	
+	
 
-	public String getUniqueName() {
-		return this.uniqueName;
-	}
-
-	public String getType() {
-		return this.type;
-	}
-
-	public void setType(String type) {
-		this.type = type.toUpperCase();
-	}
-
-	public String getVisibility() {
-		return this.visibility;
-	}
-
-	public void setVisibility(String visibility) {
-		this.visibility = visibility;
-	}
 }

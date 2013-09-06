@@ -1,62 +1,61 @@
 package husacct.analyse.task.analyser.csharp.generators;
 
-import java.util.Arrays;
-import java.util.List;
+import static husacct.analyse.task.analyser.csharp.generators.CSharpGeneratorToolkit.*;
+import husacct.analyse.infrastructure.antlr.csharp.CSharpParser;
 
 import org.antlr.runtime.tree.CommonTree;
+import org.antlr.runtime.tree.Tree;
 
 public class CSharpPropertyGenerator extends CSharpGenerator {
+	private String belongsToClass = "";
+	private String propertyName = "";
+	private CSharpBlockScopeGenerator csBlockScopeGenerator;
 
-	private String accessControlQualifier;
-	private String propertyName;
-	private String declareType;
-	
-	public CSharpPropertyGenerator(List<CommonTree> propertyTrees, String uniqueClassName) {
-		boolean classScope = false;
-		boolean hadType = false;
-		boolean hadName = false;
-		int lineNumber = 0;
-		for (CommonTree tree : propertyTrees) {
-			int type = tree.getType();
-			String text = tree.getText();
-			if (type == STATIC) {
-				classScope = true;
-			}
-			if (hadType) {
-				hadName = checkName(type, text);
-			} else {
-				hadType = checkType(type, text);
-			}
-			if (type == EQUALS && !hadName) {
-				return;
-			}
-			checkAccessorCollection(type, text);
-			lineNumber = tree.getLine();
-		}
+	public void generateProperyToDomain(CommonTree propertyTree, String belongsToClass) {
+		this.belongsToClass = belongsToClass;
 		
-		String uniqueName = uniqueClassName + "." + propertyName;
-		modelService.createAttribute(classScope, accessControlQualifier, uniqueClassName, declareType, propertyName, uniqueName, lineNumber);
+		setPropertyName(propertyTree);
+		findGetterAndSetter(propertyTree);
 	}
-
-	private boolean checkName(int type, String text) {
-		if (type == IDENTIFIER) {
-			propertyName = text;
-			return true;
-		}
-		return false;
-	}
-
-	private boolean checkType(int type, String text) {
-		if (Arrays.binarySearch(typeCollection, type) > -1) {
-			declareType = text;
-			return true;
-		}
-		return false;
-	}
-	private void checkAccessorCollection(int type, String text) {
-		if (Arrays.binarySearch(accessorCollection, type) > -1) {
-			accessControlQualifier += text + " ";
+	
+	private void setPropertyName(CommonTree propertyTree) {
+		CommonTree propertyNameTree = getFirstDescendantWithType(propertyTree, CSharpParser.MEMBER_NAME);
+		
+		if (propertyNameTree != null) {
+			this.propertyName = getTypeNameAndParts(propertyNameTree);	
 		}
 	}
+	
+	private void findGetterAndSetter(Tree tree) {
+		for (int i = 0; i < tree.getChildCount(); i++) {
+			Tree child = tree.getChild(i);
+			if (child.getType() == CSharpParser.IDENTIFIER) {
+				String type = child.getText();
+				if (type.equals("get")) {
+					CommonTree propertyGetBlock = (CommonTree)tree.getChild(i + 1);
+					setPropertyGetBlock(propertyGetBlock);
+				}
+				else if (type.equals("set")) {
+					CommonTree propertySetBlock = (CommonTree)tree.getChild(i + 1);
+					setPropertySetBlock(propertySetBlock);
+				}
+			}
+			findGetterAndSetter(child);
+		}
+	}
+	
+	private void setPropertySetBlock(CommonTree propertySetBlock) {
+		String methodName = "set" + propertyName;
+		delegateBlockToBlockScopeGenerator(propertySetBlock, methodName);
+	}
 
+	private void setPropertyGetBlock(CommonTree propertyGetBlock) {
+		String methodName = "get" + propertyName;
+		delegateBlockToBlockScopeGenerator(propertyGetBlock, methodName);
+	}
+
+	private void delegateBlockToBlockScopeGenerator(CommonTree tree, String methodName) {
+		csBlockScopeGenerator = new CSharpBlockScopeGenerator();
+		csBlockScopeGenerator.walkThroughBlockScope(tree, belongsToClass, methodName);
+	}
 }

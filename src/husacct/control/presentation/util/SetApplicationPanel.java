@@ -1,7 +1,9 @@
 package husacct.control.presentation.util;
 
 import husacct.ServiceProvider;
+import husacct.common.dto.AnalysedModuleDTO;
 import husacct.common.dto.ApplicationDTO;
+import husacct.common.dto.ProjectDTO;
 import husacct.common.locale.ILocaleService;
 import husacct.common.services.IServiceListener;
 import husacct.control.IControlService;
@@ -12,11 +14,13 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -30,49 +34,50 @@ import javax.swing.event.ListSelectionListener;
 public class SetApplicationPanel extends JPanel{
 	private static final long serialVersionUID = 1L;
 	private JLabel pathLabel, applicationNameLabel, languageSelectLabel, versionLabel;
-	private JList pathList;
+	private JList<String> pathList;
 	private JTextField applicationNameText, versionText;
-	private JComboBox languageSelect;
+	private JComboBox<String> languageSelect;
 	private JButton addButton, removeButton;
 	private String[] languages;
-	private DefaultListModel pathListModel = new DefaultListModel();
-	
+	private DefaultListModel<String> pathListModel = new DefaultListModel<String>();
+	private JDialog dialogOwner;
 	private JPanel panel;
 	private GridBagConstraints constraint = new GridBagConstraints();
-	
+
 	private IControlService controlService = ServiceProvider.getInstance().getControlService();
 	private ILocaleService localeService = ServiceProvider.getInstance().getLocaleService();
-	
-	public SetApplicationPanel(){
+
+	public SetApplicationPanel(JDialog dialogOwner){
+		this.setDialogOwner(dialogOwner);
 		addComponents();
 		setListeners();
 		setDefaultValues();
 	}
-	
+
 	public void addComponents(){
 		this.setLayout(new GridBagLayout());
 		this.languages = ServiceProvider.getInstance().getAnalyseService().getAvailableLanguages();
-		
+
 		applicationNameLabel = new JLabel(localeService.getTranslatedString("ApplicationNameLabel"));
 		languageSelectLabel = new JLabel(localeService.getTranslatedString("LanguageSelectLabel"));
 		versionLabel = new JLabel(localeService.getTranslatedString("VersionLabel"));
 		pathLabel = new JLabel(localeService.getTranslatedString("PathLabel"));
 		addButton = new JButton(localeService.getTranslatedString("AddButton"));
 		removeButton = new JButton(localeService.getTranslatedString("RemoveButton"));
-		
+
 		applicationNameText = new JTextField("myApplication", 20);
-		languageSelect = new JComboBox(languages);
+		languageSelect = new JComboBox<String>(languages);
 		versionText = new JTextField(10);
-		
-		pathList = new JList(pathListModel);
+
+		pathList = new JList<String>(pathListModel);
 		pathList.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
 		pathList.setLayoutOrientation(JList.VERTICAL);
 		pathList.setVisibleRowCount(-1);
 		JScrollPane listScroller = new JScrollPane(pathList);
 		listScroller.setAlignmentX(Component.LEFT_ALIGNMENT);
-		
+
 		removeButton.setEnabled(false);
-		
+
 		add(applicationNameLabel, getConstraint(0, 0, 1, 1));
 		add(applicationNameText, getConstraint(1, 0, 2, 1));
 		add(languageSelectLabel, getConstraint(0, 1, 1, 1));
@@ -81,11 +86,11 @@ public class SetApplicationPanel extends JPanel{
 		add(versionText, getConstraint(1, 2, 2, 1));
 		add(pathLabel, getConstraint(0, 3, 1, 1));
 		add(listScroller, getConstraint(0, 4, 2, 3, 200, 150));
-		
+
 		add(addButton, getConstraint(2, 4, 1, 1));
 		add(removeButton, getConstraint(2, 5, 1, 1));
 	}
-	
+
 	private void setListeners(){
 		pathList.addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
@@ -96,19 +101,19 @@ public class SetApplicationPanel extends JPanel{
 				}
 			}
 		});
-		
+
 		addButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				showAddFileDialog();
 			}
 		});
-		
+
 		removeButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				pathListModel.remove(pathList.getSelectedIndex());
 			}
 		});
-		
+
 		localeService.addServiceListener(new IServiceListener() {
 			public void update() {
 				applicationNameLabel.setText(localeService.getTranslatedString("ApplicationNameLabel"));
@@ -120,7 +125,7 @@ public class SetApplicationPanel extends JPanel{
 			}
 		});
 	}
-	
+
 	private void showAddFileDialog() {
 		FileDialog fileChooser = new FileDialog(JFileChooser.DIRECTORIES_ONLY, localeService.getTranslatedString("AddButton"));
 		int returnVal = fileChooser.showDialog(panel);
@@ -128,31 +133,44 @@ public class SetApplicationPanel extends JPanel{
 			pathListModel.add(pathListModel.size(), fileChooser.getSelectedFile().getAbsolutePath());
 		}
 	}
-	
+
 	private void setDefaultValues(){
-		ApplicationDTO applicationData = ServiceProvider.getInstance().getDefineService().getApplicationDetails();;
+		ApplicationDTO applicationData = ServiceProvider.getInstance().getDefineService().getApplicationDetails();
+		
 		applicationNameText.setText(applicationData.name);
-		for(int i=0; i<languages.length; i++){
-			if(applicationData.programmingLanguage.equals(languages[i])){
-				languageSelect.setSelectedIndex(i);
+		versionText.setText(applicationData.version);
+		
+		boolean applicationHasProject = applicationData.projects.size() > 0;
+		ArrayList<String> items = new ArrayList<String>();
+		if(applicationHasProject){
+			for(int i=0; i<languages.length; i++){
+				if(applicationData.projects.get(0).programmingLanguage.equals(languages[i])){
+					languageSelect.setSelectedIndex(i);
+				}
+			}
+			
+			items = applicationData.projects.get(0).paths;
+			for (int i=0; i<items.size(); i++) {
+				pathListModel.add(i, items.get(i));
 			}
 		}
-		versionText.setText(applicationData.version);
-		String[] items = applicationData.paths;
-		for (int i=0; i<items.length; i++) {
-			pathListModel.add(i, items[i]);
-		}
 	}
-	
+
 	public ApplicationDTO getApplicationData(){
 		String name = applicationNameText.getText();
 		String language = languages[languageSelect.getSelectedIndex()];
 		String version = versionText.getText();
-		String[] paths = Arrays.copyOf(pathListModel.toArray(), pathListModel.toArray().length, String[].class);
-		ApplicationDTO applicationData = new ApplicationDTO(name, paths, language, version);
+		ArrayList<String> paths = new ArrayList<String>(Arrays.asList(Arrays.copyOf(pathListModel.toArray(), pathListModel.toArray().length, String[].class)));
+		
+		ArrayList<ProjectDTO> projects = new ArrayList<ProjectDTO>();
+		ArrayList<AnalysedModuleDTO> analysedModules = new ArrayList<AnalysedModuleDTO>();
+		ProjectDTO project = new ProjectDTO(name, paths, language, version, "", analysedModules);
+		projects.add(project);
+		
+		ApplicationDTO applicationData = new ApplicationDTO(name, projects, version);
 		return applicationData;
 	}
-	
+
 	private GridBagConstraints getConstraint(int gridx, int gridy, int gridwidth, int gridheight, int ipadx, int ipady){
 		constraint.fill = GridBagConstraints.BOTH;
 		constraint.insets = new Insets(3, 3, 3, 3);
@@ -164,32 +182,41 @@ public class SetApplicationPanel extends JPanel{
 		constraint.gridheight = gridheight;
 		return constraint;		
 	}
-	
+
 	private GridBagConstraints getConstraint(int gridx, int gridy, int gridwidth, int gridheight){
 		return getConstraint(gridx, gridy, gridwidth, gridheight, 0, 0);
 	}
-	
+
 	public boolean dataValidated() {
 		String applicationName = applicationNameText.getText();
-		
+
 		boolean showError = false;
 		String errorMessage = "";
-		
-		
+
 		if(applicationName == null || applicationName.length() < 1){
 			errorMessage = localeService.getTranslatedString("FieldEmptyError");
 			showError = true;
-		}
-		if (!Regex.matchRegex(Regex.nameWithSpacesRegex, applicationNameText.getText())) {
+		}else if (!Regex.matchRegex(Regex.nameWithSpacesRegex, applicationNameText.getText())) {
 			errorMessage = localeService.getTranslatedString("MustBeAlphaNumericError");
 			showError = true;
+		}else if(pathListModel.size() < 1){
+			errorMessage = localeService.getTranslatedString("NoPathsAdded");
+			showError = true;
 		}
-		
+
 		if(showError){
 			controlService.showErrorMessage(errorMessage);
 			return false;
 		}
 		return true;
 	}
-	
+
+	public JDialog getDialogOwner() {
+		return dialogOwner;
+	}
+
+	public void setDialogOwner(JDialog dialogOwner) {
+		this.dialogOwner = dialogOwner;
+	}
+
 }

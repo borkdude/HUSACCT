@@ -1,10 +1,12 @@
 package husacct.control.presentation.util;
 
 import husacct.ServiceProvider;
+import husacct.common.help.presentation.HelpableJDialog;
 import husacct.common.locale.ILocaleService;
 import husacct.control.IControlService;
 import husacct.control.task.ExportController;
 import husacct.control.task.MainController;
+import husacct.validate.task.extensiontypes.ExtensionTypes.ExtensionType;
 
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -21,7 +23,7 @@ import javax.swing.JLabel;
 import javax.swing.JTextField;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-public class ExportViolationsReportDialog extends JDialog{
+public class ExportViolationsReportDialog extends HelpableJDialog {
 	private static final long serialVersionUID = 1L;
 
 	private JLabel pathLabel;
@@ -33,9 +35,11 @@ public class ExportViolationsReportDialog extends JDialog{
 	private IControlService controlService = ServiceProvider.getInstance().getControlService();
 	private ILocaleService localeService = ServiceProvider.getInstance().getLocaleService();
 	private ExportController exportController;
+	private MainController mainController;
 	
 	public ExportViolationsReportDialog(MainController mainController) {
 		super(mainController.getMainGui(), true);
+		this.mainController = mainController;
 		this.exportController = mainController.getExportController();
 		setTitle(localeService.getTranslatedString("ExportReport"));
 		setup();
@@ -98,8 +102,18 @@ public class ExportViolationsReportDialog extends JDialog{
 		if(returnVal == JFileChooser.APPROVE_OPTION) {
 			if(fileDialog.getSelectedFile().exists()){
 				setFile(fileDialog.getSelectedFile());
-			} else {
-				setFile(new File(fileDialog.getSelectedFile().getAbsolutePath() + "." + fileDialog.getFileFilter().getDescription()));
+			} 
+			else {
+				String fileExtension = "";
+				
+				if(fileDialog.getFileFilter() == null) {
+					fileExtension = ExtensionType.PDF.getExtension();
+				}
+				else {
+					fileExtension = fileDialog.getFileFilter().getDescription();
+				}
+				
+				setFile(new File(fileDialog.getSelectedFile().getAbsolutePath() + "." + fileExtension));
 			}
 		}
 	}

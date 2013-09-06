@@ -1,6 +1,7 @@
 package husacct.validate.presentation;
 
 import husacct.ServiceProvider;
+import husacct.common.help.presentation.HelpableJInternalFrame;
 import husacct.common.locale.ILocaleService;
 import husacct.validate.domain.validation.Severity;
 import husacct.validate.presentation.languageSeverityConfiguration.ConfigurationRuleTypeDTO;
@@ -29,7 +30,7 @@ import javax.swing.ListSelectionModel;
 
 import org.apache.log4j.Logger;
 
-public final class ConfigurationUI extends JInternalFrame implements Observer {
+public final class ConfigurationUI extends HelpableJInternalFrame implements Observer {
 
 	private static final long serialVersionUID = 7721461596323704063L;
 	private static Logger logger = Logger.getLogger(ConfigurationUI.class);
@@ -119,7 +120,7 @@ public final class ConfigurationUI extends JInternalFrame implements Observer {
 		severityNamePanelLayout.setHorizontalGroup(horizontalPaneGroup);
 
 		GroupLayout.SequentialGroup verticalButtonGroup = severityNamePanelLayout.createSequentialGroup();
-		verticalButtonGroup.addContainerGap();		
+		verticalButtonGroup.addContainerGap();
 		verticalButtonGroup.addComponent(restore);
 		verticalButtonGroup.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED);
 		verticalButtonGroup.addComponent(applySeverity);
@@ -221,7 +222,7 @@ public final class ConfigurationUI extends JInternalFrame implements Observer {
 		clearModel(severityModel);
 		severities = taskServiceImpl.getAllSeverities();
 		for (Severity severity : severities) {
-			severityModel.addRow(new Object[]{severity.getSeverityName(), severity.getColor()});
+			severityModel.addRow(new Object[] {severity.getSeverityName(), severity.getColor()});
 		}
 
 	}
@@ -253,7 +254,7 @@ public final class ConfigurationUI extends JInternalFrame implements Observer {
 		}
 		if (tabPanel.getTabCount() == 1) {
 			logger.error("No programming language set");
-			tabPanel.addTab(localeService.getTranslatedString("NoProgrammingLanguageAvailible"), new JPanel());
+			tabPanel.addTab(localeService.getTranslatedString("NoProgrammingLanguageAvailable"), new JPanel());
 		}
 	}
 }
