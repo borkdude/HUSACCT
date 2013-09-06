@@ -29,7 +29,7 @@ import javax.swing.event.ListSelectionListener;
 public class SaveWorkspaceDialog extends JDialog{
 
 	private MainController mainController;
-	private JList saverList;
+	private JList<Object> saverList;
 	private List<String> saverListData;
 	private JButton saveButton, cancelButton;
 	
@@ -53,7 +53,7 @@ public class SaveWorkspaceDialog extends JDialog{
 	
 	private void setup(){
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		this.setSize(new Dimension(500, 380));
+		this.setSize(new Dimension(550, 380));
 		this.setLocationRelativeTo(getRootPane());
 	}
 	
@@ -64,12 +64,13 @@ public class SaveWorkspaceDialog extends JDialog{
 	
 	private void addComponents(){
 		
-		saverList = new JList(saverListData.toArray());
+		saverList = new JList<Object>(saverListData.toArray());
 		saverList.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
 		saverList.setLayoutOrientation(JList.VERTICAL);
 		saverList.setVisibleRowCount(-1);
 		JScrollPane listScrollPane = new JScrollPane(saverList);
 		listScrollPane.setAlignmentX(LEFT_ALIGNMENT);
+		
 		
 		savePanel = new JPanel();
 		savePanel.setLayout(new BoxLayout(savePanel, BoxLayout.Y_AXIS));
@@ -122,7 +123,8 @@ public class SaveWorkspaceDialog extends JDialog{
 	private boolean saveWorkspace(){
 		String selectedLoader = (String) saverList.getSelectedValue();
 		HashMap<String, Object> data = selectedSaverPanel.getData();
-		return mainController.getWorkspaceController().saveWorkspace(selectedLoader, data);
+		HashMap<String, Object> config = selectedSaverPanel.getConfig();
+		return mainController.getWorkspaceController().saveWorkspace(selectedLoader, data, config);
 	}
 	
 	private void loadSelectedOpenMethodPanel(){

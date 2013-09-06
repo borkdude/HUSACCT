@@ -8,27 +8,40 @@ import java.util.Calendar;
 import java.util.List;
 
 class ViolationRepository {
+
 	private List<Violation> violations;
-	private Calendar date;
+	private Calendar repositoryCalendar;
 
-	ViolationRepository(){
+	public ViolationRepository() {
 		this.violations = new ArrayList<Violation>();
-		this.date = Calendar.getInstance();
-	}	
+		this.setRepositoryCalendar(Calendar.getInstance());
+	}
 
-	void addViolation(List<Violation> newViolations){
+	void addViolation(List<Violation> newViolations) {
 		this.violations = newViolations;
 	}
 
-	void addViolation(Violation violation){
+	void addViolation(Violation violation) {
 		this.violations.add(violation);
 	}
 
-	SimpleEntry<Calendar, List<Violation>> getAllViolations(){
-		return new SimpleEntry<Calendar, List<Violation>>(date, violations);
+	SimpleEntry<Calendar, List<Violation>> getAllViolations() {
+		return new SimpleEntry<Calendar, List<Violation>>(getCurrentCalendar(), violations);
+	}
+	
+	Calendar getCurrentCalendar() {
+		return Calendar.getInstance();
 	}
 
-	void clear(){
+	void clear() {
 		this.violations = new ArrayList<Violation>();
+	}
+
+	Calendar getRepositoryCalendar() {
+		return repositoryCalendar;
+	}
+
+	void setRepositoryCalendar(Calendar repositoryCalendar) {
+		this.repositoryCalendar = repositoryCalendar;
 	}
 }

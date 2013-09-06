@@ -3,7 +3,7 @@ package husacct.validate.task.report.writer;
 import husacct.validate.domain.factory.message.Messagebuilder;
 import husacct.validate.domain.validation.Message;
 import husacct.validate.domain.validation.Violation;
-import husacct.validate.domain.validation.internal_transfer_objects.ViolationsPerSeverity;
+import husacct.validate.domain.validation.internaltransferobjects.ViolationsPerSeverity;
 import husacct.validate.domain.validation.report.Report;
 import husacct.validate.task.extensiontypes.ExtensionTypes.ExtensionType;
 
@@ -23,7 +23,7 @@ public class XMLReportWriter extends ReportWriter {
 	}
 
 	@Override
-	public void createReport() throws IOException {		
+	public void createReport() throws IOException {
 		Document document = new Document();
 
 		Element reportElement = new Element("report");
@@ -46,8 +46,9 @@ public class XMLReportWriter extends ReportWriter {
 		reportElement.addContent(violationGeneratedOn);
 
 		Element violationsSeverities = new Element("violations");
-		violationsSeverities.setAttribute(new Attribute("totalViolations" , "" +  report.getViolations().getValue().size()));
-		for(ViolationsPerSeverity violationPerSeverity : report.getViolationsPerSeverity()) {
+		violationsSeverities.setAttribute(new Attribute("totalViolations", "" + report.getViolations().getValue().size()));
+		
+		for (ViolationsPerSeverity violationPerSeverity : report.getViolationsPerSeverity()) {
 			Element violationElement = new Element(violationPerSeverity.getSeverity().getSeverityKey());
 			violationElement.setText("" + violationPerSeverity.getAmount());
 			violationsSeverities.addContent(violationElement);
@@ -57,7 +58,7 @@ public class XMLReportWriter extends ReportWriter {
 		Element violations = new Element("violations");
 		reportElement.addContent(violations);
 
-		for(Violation violation : report.getViolations().getValue()) {
+		for (Violation violation : report.getViolations().getValue()) {
 			Element xmlViolation = new Element("violation");
 
 			Element source = new Element("source");
@@ -72,12 +73,12 @@ public class XMLReportWriter extends ReportWriter {
 			source.setText(violation.getClassPathFrom());
 			lineNr.setText("" + violation.getLinenumber());
 			severity.setText(violation.getSeverity().getSeverityName());
-			if(violation.getLogicalModules() != null) {
+			if (violation.getLogicalModules() != null) {
 				Message messageObject = violation.getMessage();
-				String message = new Messagebuilder().createMessage(messageObject);
+				String message = new Messagebuilder().createMessage(messageObject,violation);
 				ruleType.setText(message);
 			}
-			dependencyKind.setText(violation.getViolationtypeKey());
+			dependencyKind.setText(violation.getViolationTypeKey());
 			isDirect.setText("" + violation.isIndirect());
 
 			xmlViolation.addContent(source);
@@ -93,6 +94,6 @@ public class XMLReportWriter extends ReportWriter {
 		XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
 		FileWriter fileWriter = new FileWriter(getFileName());
 		outputter.output(document, fileWriter);
-		fileWriter.close();		
+		fileWriter.close();
 	}
 }

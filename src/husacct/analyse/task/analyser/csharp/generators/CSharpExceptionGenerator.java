@@ -1,78 +1,44 @@
 package husacct.analyse.task.analyser.csharp.generators;
 
-import husacct.analyse.task.analyser.csharp.CSharpData;
-
-import java.util.ArrayList;
-import java.util.List;
+import husacct.analyse.infrastructure.antlr.csharp.CSharpParser;
+import static husacct.analyse.task.analyser.csharp.generators.CSharpGeneratorToolkit.*;
 
 import org.antlr.runtime.tree.CommonTree;
- 
-public class CSharpExceptionGenerator extends CSharpGenerator{
-	private String exceptionClass;
-	private boolean forward;
-	private boolean foundExceptionVariable;
-	private boolean foundDot;
-	private String exceptionVariable;
-	private String belongsToClass;
-	private ArrayList<CSharpData> allInvocations = new ArrayList<CSharpData>();
-	
-	public void generateException(List<CommonTree> tree, String belongsToClass, int lineNumber){
-		for(CommonTree node : tree){
-			exceptionClass = checkForExceptionClass(node);
-			checkInvocations(node);
-		}
-		this.belongsToClass = belongsToClass;
-		modelService.createException(belongsToClass, belongsToClass, lineNumber, exceptionClass);
-		
-		for(CSharpData invocation : allInvocations)
-		{
-			modelService.createMethodInvocation(belongsToClass,invocation.getLineNumber(),invocation.getInvocationTo() , invocation.getInvocationName(),"invocation");
-		}
-	}
 
-	private String checkForExceptionClass(CommonTree node) {
-		if(exceptionClass == null){
-			exceptionClass = "";
-		}
-		
-		if(node.getType() == IDENTIFIER && exceptionClass.isEmpty()){
-			exceptionClass = node.getText();
-		}
-		return exceptionClass;
-	}
-	
-	private void checkInvocations(CommonTree node)
-	{
-		if(exceptionClass != "" && node.getType() == 4 && !forward && node.getText() != exceptionClass)
-		{
-			exceptionVariable = node.getText();
-		}
-		
-		if(exceptionVariable != "" && node.getType() == FORWARDCURLYBRACKET)
-		{
-			this.forward = true;
-		}
-		
-		if((forward) && (node.getType() == IDENTIFIER) && (node.getText()).equals(exceptionVariable))
-		{
-			foundExceptionVariable = true;
-		}
-		
-		if(foundExceptionVariable && node.getType() == DOT)
-		{
-			foundDot = true;
-		}
-		
-		if(foundExceptionVariable && foundDot && node.getType() == IDENTIFIER)
-		{
-			foundDot = false;
-			foundExceptionVariable = false;
-			CSharpData data = new CSharpData();
-			data.setClassName(belongsToClass);
-			data.setLineNumber(node.getLine());
-			data.setInvocationTo(exceptionClass);
-			data.setInvocationName(node.getText());
-			allInvocations.add(data);
-		}
-	}
+public class CSharpExceptionGenerator extends CSharpGenerator {
+
+    private String exceptionType;
+    private String fromClass;
+    private String exceptionClass;
+    private int lineNumber;
+
+    public void generateExceptionToDomain(CommonTree tree, String theClass) {
+        this.lineNumber = tree.getLine();
+        this.fromClass = theClass;
+        setExceptionType(tree);
+        modelService.createException(fromClass, exceptionClass, lineNumber, exceptionType);
+    }
+
+    private void setExceptionType(CommonTree tree) {
+        if (isCatchedException(tree)) {
+            this.exceptionType = "catch";
+            getCaughtExceptionClass(tree);
+        } else {
+            this.exceptionType = "throw";
+            getThrownExceptionClass(tree);
+        }
+    }
+
+    private void getThrownExceptionClass(CommonTree tree) {
+        CommonTree typenameTree = walkTree(tree, CSharpParser.UNARY_EXPRESSION, CSharpParser.OBJECT_CREATION_EXPRESSION, CSharpParser.TYPE);
+        exceptionClass = getTypeNameAndParts(typenameTree);
+    }
+
+    private void getCaughtExceptionClass(CommonTree tree) {
+        exceptionClass = getTypeNameAndParts(tree);
+    }
+
+    private boolean isCatchedException(CommonTree tree) {
+        return isOfType(tree, CSharpParser.CATCH);
+    }
 }

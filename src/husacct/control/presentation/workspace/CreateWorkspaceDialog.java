@@ -2,6 +2,7 @@ package husacct.control.presentation.workspace;
 
 import husacct.ServiceProvider;
 import husacct.common.dto.ApplicationDTO;
+import husacct.common.help.presentation.HelpableJDialog;
 import husacct.common.locale.ILocaleService;
 import husacct.control.IControlService;
 import husacct.control.presentation.util.DialogUtils;
@@ -25,7 +26,7 @@ import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
-public class CreateWorkspaceDialog extends JDialog{
+public class CreateWorkspaceDialog extends HelpableJDialog{
 
 	private static final long serialVersionUID = 1L;
 	private MainController mainController;
@@ -40,7 +41,7 @@ public class CreateWorkspaceDialog extends JDialog{
 	public CreateWorkspaceDialog(MainController mainController){
 		super(mainController.getMainGui(), true);
 		this.mainController = mainController;
-		setApplicationPanel = new SetApplicationPanel();
+		setApplicationPanel = new SetApplicationPanel(this);
 		setApplicationPanel.setVisible(false);
 		this.setTitle(localeService.getTranslatedString("CreateWorkspaceTitle"));		
 		setup();
@@ -99,7 +100,7 @@ public class CreateWorkspaceDialog extends JDialog{
 		okButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if(analyseApplicationCheckbox.isSelected()){
-					if(setApplicationPanel.dataValidated() && workspaceNameValidated()) {
+					if(workspaceNameValidated()&&setApplicationPanel.dataValidated()) {
 						createWorkspace();
 						ApplicationDTO applicationData = setApplicationPanel.getApplicationData();
 						mainController.getApplicationController().setAndAnalyseApplicationData(applicationData);
@@ -140,8 +141,8 @@ public class CreateWorkspaceDialog extends JDialog{
 
 	private boolean workspaceNameValidated() {
 		String workspaceName = workspaceNameText.getText();
-		if (workspaceName == null || workspaceName.length() < 1) {
-			controlService.showErrorMessage(localeService.getTranslatedString("FieldEmptyError"));
+		if (workspaceName == null || workspaceName.trim().length() < 1) {
+			controlService.showErrorMessage(localeService.getTranslatedString("WorkspaceNameEmptyError"));
 			return false;
 		}
 		else if(!Regex.matchRegex(Regex.nameRegex, workspaceName)) {

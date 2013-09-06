@@ -2,150 +2,251 @@ package husacct.define.domain.services;
 
 import husacct.ServiceProvider;
 import husacct.define.domain.SoftwareArchitecture;
-import husacct.define.domain.SoftwareUnitDefinition;
-import husacct.define.domain.module.Module;
 import husacct.define.domain.module.ModuleComparator;
+import husacct.define.domain.module.ModuleFactory;
+import husacct.define.domain.module.ModuleStrategy;
+import husacct.define.domain.services.stateservice.StateService;
+import husacct.define.domain.softwareunit.SoftwareUnitDefinition;
+import husacct.define.task.JtreeController;
 
 import java.util.ArrayList;
 import java.util.Collections;
 
 public class ModuleDomainService {
-	
-	public long addModuleToRoot(Module module){
-		long moduleId = SoftwareArchitecture.getInstance().addModule(module);
-		ServiceProvider.getInstance().getDefineService().notifyServiceListeners();
-		return moduleId;
-	}
-	
-	public long addModuleToParent(long parentModuleId, Module module){
-		Module parentModule = SoftwareArchitecture.getInstance().getModuleById(parentModuleId);
-		parentModule.addSubModule(module);
+
+	private ModuleFactory factory = new ModuleFactory();
+
+	public long addModuleToParent(long parentModuleId, ModuleStrategy module) {
+
+		
+        SoftwareArchitecture.getInstance().addModule(parentModuleId, module);
+		StateService.instance().addModule(module);
+		
+
+		
 		long moduleId = module.getId();
+
 		ServiceProvider.getInstance().getDefineService().notifyServiceListeners();
 		return moduleId;
-	}	
-	
-	public void updateModule(long moduleId, String moduleName, String moduleDescription) {
-		Module module = SoftwareArchitecture.getInstance().getModuleById(moduleId);
-		module.setName(moduleName);
-		module.setDescription(moduleDescription);
-		ServiceProvider.getInstance().getDefineService().notifyServiceListeners();
-	}
-	
-	public void removeAllModules() {
-		SoftwareArchitecture.getInstance().removeAllModules();
-		ServiceProvider.getInstance().getDefineService().notifyServiceListeners();
 	}
 
-	public void removeModuleById(long moduleId) {
-		Module module = SoftwareArchitecture.getInstance().getModuleById(moduleId);
-		SoftwareArchitecture.getInstance().removeModule(module);
+
+	public long addModuleToRoot(ModuleStrategy module) {
+	
+		long moduleId = SoftwareArchitecture.getInstance().addModule(module);
+	
+		StateService.instance().addModule(module);
+	
+	
+		
 		ServiceProvider.getInstance().getDefineService().notifyServiceListeners();
+		return moduleId;
+	}
+
+	public String addNewModuleToParent(long parentModuleId,
+			ModuleStrategy module) {
+		
+		StateService.instance().addModule(module);
+		ServiceProvider.getInstance().getDefineService()
+				.notifyServiceListeners();
+	
+		return SoftwareArchitecture.getInstance().addModule(parentModuleId,module);
 	}
 	
+	public ModuleStrategy createNewModule(String type)
+	{
+	ModuleStrategy result=	factory.createModule(type);
+	
+
+		
+		return result;
+		
+	}
+
+	public ModuleStrategy getModuleById(long moduleId) {
+		return SoftwareArchitecture.getInstance().getModuleById(moduleId);
+	}
+
+	public ModuleStrategy getModuleByLogicalPath(String logicalPath) {
+		return SoftwareArchitecture.getInstance().getModuleByLogicalPath(
+				logicalPath);
+	}
+
+	public ModuleStrategy getModuleIdBySoftwareUnit(SoftwareUnitDefinition su) {
+		return SoftwareArchitecture.getInstance().getModuleBySoftwareUnit(
+				su.getName());
+	}
+	
+	public ModuleStrategy getModuleByName(String name){
+		return SoftwareArchitecture.getInstance().getModuleByName(name);
+	}
+
 	public String getModuleNameById(long moduleId) {
-		String moduleName;
-		if (moduleId != -1){
-			Module module = SoftwareArchitecture.getInstance().getModuleById(moduleId);
-			moduleName = module.getName();
-		} else {
-			moduleName = "";
+		String moduleName = new String();
+		if (moduleId != -1) {
+			moduleName = SoftwareArchitecture.getInstance()
+					.getModuleById(moduleId).getName();
 		}
 		return moduleName;
 	}
 
-	public Module getModuleById(long moduleId) {
-		Module module = SoftwareArchitecture.getInstance().getModuleById(moduleId);
-		return module;
+	public ModuleStrategy getParentModule(ModuleStrategy module) {
+		return module.getparent();
 	}
-	
-	public Module[] getRootModules(){
-		ArrayList<Module> moduleList = SoftwareArchitecture.getInstance().getModules();
-		Module[] modules = new Module[moduleList.size()]; moduleList.toArray(modules);
+
+	public Long getParentModuleIdByChildId(Long moduleId) {
+		return SoftwareArchitecture.getInstance().getParentModuleIdByChildId(
+				moduleId);
+	}
+
+	public ModuleStrategy getRootModule() {
+		return SoftwareArchitecture.getInstance().getRootModule();
+	}
+
+	public ModuleStrategy[] getRootModules() {
+		ArrayList<ModuleStrategy> moduleList = SoftwareArchitecture
+				.getInstance().getModules();
+		ModuleStrategy[] modules = new ModuleStrategy[moduleList.size()];
+		moduleList.toArray(modules);
 		return modules;
 	}
-	
-	public ArrayList<Long> getRootModulesIds(){
-		ArrayList<Module> moduleList = SoftwareArchitecture.getInstance().getModules();
+
+	public ArrayList<Long> getRootModulesIds() {
+		ArrayList<ModuleStrategy> moduleList = SoftwareArchitecture
+				.getInstance().getModules();
 		ArrayList<Long> moduleIdList = new ArrayList<Long>();
-		for (Module module : moduleList) {
+		for (ModuleStrategy module : moduleList) {
 			moduleIdList.add(module.getId());
 		}
 		return moduleIdList;
 	}
-	
+
 	public ArrayList<Long> getSiblingModuleIds(long moduleId) {
 		ArrayList<Long> childModuleIdList = new ArrayList<Long>();
 		if (moduleId != -1) {
-			long parentModuleId = SoftwareArchitecture.getInstance().getParentModuleIdByChildId(moduleId);
+			long parentModuleId = SoftwareArchitecture.getInstance()
+					.getParentModuleIdByChildId(moduleId);
 			childModuleIdList = getSubModuleIds(parentModuleId);
-			
-			Module module = SoftwareArchitecture.getInstance().getModuleById(moduleId);
+
+			ModuleStrategy module = SoftwareArchitecture.getInstance()
+					.getModuleById(moduleId);
 			childModuleIdList.remove(module.getId());
 		}
-		return childModuleIdList; 
+		return childModuleIdList;
 	}
-	
+
+	public ArrayList<ModuleStrategy> getSortedModules() {
+		ArrayList<ModuleStrategy> modules = SoftwareArchitecture.getInstance()
+				.getModules();
+		Collections.sort(modules, new ModuleComparator());
+		for (ModuleStrategy module : modules) {
+			sortModuleChildren(module);
+		}
+		return modules;
+	}
+
 	public ArrayList<Long> getSubModuleIds(Long parentModuleId) {
 		ArrayList<Long> childModuleIdList = new ArrayList<Long>();
-		
+
 		if (parentModuleId != -1) {
-			Module parentModule = SoftwareArchitecture.getInstance().getModuleById(parentModuleId);
-			
-			for (Module module : parentModule.getSubModules()) {
+			ModuleStrategy parentModule = SoftwareArchitecture.getInstance()
+					.getModuleById(parentModuleId);
+
+			for (ModuleStrategy module : parentModule.getSubModules()) {
 				childModuleIdList.add(module.getId());
-				//get the submoduleIds of this submodule
-				//recursive
-				ArrayList<Long> subModuleIdList = getSubModuleIds(module.getId());
-				for (Long l : subModuleIdList){
+
+				ArrayList<Long> subModuleIdList = getSubModuleIds(module
+						.getId());
+				for (Long l : subModuleIdList) {
 					childModuleIdList.add(l);
 				}
 			}
-		}else {
+		} else {
 			childModuleIdList = getRootModulesIds();
 		}
 		return childModuleIdList;
 	}
-	
-	
-	public ArrayList<Module> getSortedModules() {
-		ArrayList<Module> modules = SoftwareArchitecture.getInstance().getModules();
-		Collections.sort(modules, new ModuleComparator());
-		for(Module module : modules) {
-			this.sortModuleChildren(module);
-		}
-		return modules;
-	}
-	
-	public void sortModuleChildren(Module module) {
-		ArrayList<Module> children = module.getSubModules();
-		Collections.sort(children, new ModuleComparator());
-		for(Module child : children) {
-			this.sortModuleChildren(child);
-		}
-	}
-	
-	public Module getModuleByLogicalPath(String logicalPath){
-		Module module = SoftwareArchitecture.getInstance().getModuleByLogicalPath(logicalPath);
-		return module;
-	}
-	
-	public void moveLayerUp(long layerId){
-		SoftwareArchitecture.getInstance().moveLayerUp(layerId);
-		ServiceProvider.getInstance().getDefineService().notifyServiceListeners();
-	}
-	
-	public void moveLayerDown(long layerId){
+
+	public void moveLayerDown(long layerId) {
+		StateService.instance().layerDown(layerId);
 		SoftwareArchitecture.getInstance().moveLayerDown(layerId);
-		ServiceProvider.getInstance().getDefineService().notifyServiceListeners();
+		ServiceProvider.getInstance().getDefineService()
+				.notifyServiceListeners();
 	}
 
-	public Module getModuleIdBySoftwareUnit(SoftwareUnitDefinition su) {
-		Module module = SoftwareArchitecture.getInstance().getModuleBySoftwareUnit(su.getName());
-		return module;
+	public void moveLayerUp(long layerId) {
+		StateService.instance().layerUp(layerId);
+		SoftwareArchitecture.getInstance().moveLayerUp(layerId);
+		ServiceProvider.getInstance().getDefineService()
+				.notifyServiceListeners();
+	}
+
+	public void removeAllModules() {
+		SoftwareArchitecture.getInstance().removeAllModules();
+		ServiceProvider.getInstance().getDefineService()
+				.notifyServiceListeners();
+	}
+
+	public void removeModuleById(long moduleId) {
+		ModuleStrategy module = SoftwareArchitecture.getInstance()
+				.getModuleById(moduleId);
+      try{
+		SoftwareArchitecture.getInstance().removeModule(module);
+	    JtreeController.instance().registerTreeRemoval(module);
+      }catch(Exception e)
+      {
+    	  e.printStackTrace();
+      }
+		ServiceProvider.getInstance().getDefineService()
+				.notifyServiceListeners();
+	}
+
+	public void sortModuleChildren(ModuleStrategy module) {
+		ArrayList<ModuleStrategy> children = module.getSubModules();
+		Collections.sort(children, new ModuleComparator());
+		for (ModuleStrategy child : children) {
+			sortModuleChildren(child);
+		}
+	}
+
+	public void updateModule(long moduleId, String moduleName,
+			String moduleDescription) {
+		ModuleStrategy module = SoftwareArchitecture.getInstance()
+				.getModuleById(moduleId);
+		StateService.instance().addUpdateModule(moduleId,
+				new String[] { module.getName(), moduleDescription },
+				new String[] { moduleName, moduleDescription });
+		module.setName(moduleName);
+		module.setDescription(moduleDescription);
+		ServiceProvider.getInstance().getDefineService()
+				.notifyServiceListeners();
 	}
 	
-	public Long getParentModuleIdByChildId(Long moduleId) {
-		return SoftwareArchitecture.getInstance().getParentModuleIdByChildId(moduleId);
+	public void updateFacade(long moduleId, String moduleName){
+		ModuleStrategy parent = SoftwareArchitecture.getInstance().getModuleById(moduleId);
+		for(ModuleStrategy subModule : parent.getSubModules()){
+			if(subModule.getType().equals("Facade")){
+				subModule.setName("Facade<"+moduleName+">");
+			}
+		}
 	}
+
+	public void updateModule(long moduleId, String moduleName,
+			String moduleDescription, String newType) {
+
+		ModuleStrategy module = SoftwareArchitecture.getInstance().getModuleById(moduleId);
+		if(module.getId() > 0){
+			DefaultRuleDomainService service = new DefaultRuleDomainService();
+			service.removeDefaultRules(module);
+			ModuleStrategy updatedModule = SoftwareArchitecture.getInstance().updateModuleType(module, newType);
+			service.addDefaultRules(updatedModule);
+			service.updateModuleRules(updatedModule);
+			StateService.instance().addUpdateModule(module, updatedModule);
+		}
+		ServiceProvider.getInstance().getDefineService()
+				.notifyServiceListeners();
+
+	}
+	
+	
 }

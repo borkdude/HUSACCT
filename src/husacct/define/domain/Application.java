@@ -1,74 +1,58 @@
 package husacct.define.domain;
 
+import java.util.ArrayList;
+
 public class Application {
-	
-	private String name;
-	private String[] paths;
-	private String programmingLanguage;
-	private String version;
+
 	private SoftwareArchitecture architecture;
-	
-	public Application()
-	{
-		this("",new String[]{},"", "1.0");
-	}
-	
-	public Application(String name, String lang)
-	{
-		this(name,new String[]{},lang, "1.0");
-	}
-	
-	public Application(String name, String[] paths, String lang, String version)
-	{
-		this.setName(name);
-		this.setPaths(paths);
-		this.setLanguage(lang);
-		this.setVersion(version);
-		this.architecture = new SoftwareArchitecture();
+	private String name;
+	private ArrayList<Project> projects;
+	private String version;
+
+	public Application() {
+		this("", new ArrayList<Project>(), "1.0");
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public Application(String name) {
+		this(name, new ArrayList<Project>(), "1.0");
 	}
 
-	public String getName() {
-		return name;
-	}
-
-	public void setPaths(String[] paths) {
-		this.paths = paths;
-	}
-
-	public String[] getPaths() {
-		return paths;
-	}
-
-	public void setLanguage(String language) {
-		this.programmingLanguage = language;
-	}
-
-	public String getLanguage() {
-		return programmingLanguage;
+	public Application(String name, ArrayList<Project> projects, String version) {
+		setName(name);
+		setProjects(projects);
+		setVersion(version);
+		architecture = new SoftwareArchitecture();
 	}
 
 	public SoftwareArchitecture getArchitecture() {
 		return architecture;
 	}
 
-	public void setArchitecture(SoftwareArchitecture architecture) {
-		this.architecture = architecture;
+	public String getName() {
+		return name;
+	}
+
+	public ArrayList<Project> getProjects() {
+		return projects;
 	}
 
 	public String getVersion() {
 		return version;
 	}
 
+	public void setArchitecture(SoftwareArchitecture architecture) {
+		this.architecture = architecture;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public void setProjects(ArrayList<Project> projects) {
+		this.projects = projects;
+	}
+
 	public void setVersion(String version) {
 		this.version = version;
 	}
-	
-	
-	
-	
-
 }

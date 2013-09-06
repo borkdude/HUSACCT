@@ -2,6 +2,7 @@ package husacct.validate.task.report.writer;
 
 import husacct.ServiceProvider;
 import husacct.validate.domain.validation.report.Report;
+import husacct.validate.domain.validation.ruletype.RuleTypes;
 import husacct.validate.task.extensiontypes.ExtensionTypes.ExtensionType;
 
 import java.io.File;
@@ -26,23 +27,22 @@ public abstract class ReportWriter {
 		this.extensionType = extensionType;
 	}
 
-	public abstract void createReport() throws IOException, URISyntaxException, DocumentException ;
+	public abstract void createReport() throws IOException, URISyntaxException, DocumentException;
 
 	protected String convertIsIndirectBooleanToString(boolean isIndirect) {
-		if(isIndirect) {
+		if (isIndirect) {
 			return "direct";
 		} else {
 			return "indirect";
 		}
 	}
 
-	protected String getDependencyKindValue(String violationtypeKey,
-			boolean indirect) {
-		if(!violationtypeKey.isEmpty()) {
+	protected String getDependencyKindValue(String violationtypeKey, boolean indirect) {
+		if (!violationtypeKey.isEmpty()) {
 			String value = ServiceProvider.getInstance().getLocaleService().getTranslatedString(violationtypeKey);
 			value += ", ";
-			if(!violationtypeKey.equals("VisibilityConvention")) {
-				if(indirect) {
+			if (!violationtypeKey.equals(RuleTypes.VISIBILITY_CONVENTION.toString())) {
+				if (indirect) {
 					value += "indirect";
 				} else {
 					value += "direct";
@@ -53,8 +53,7 @@ public abstract class ReportWriter {
 		return "";
 	}
 
-
-	protected String getCurrentDate(){
+	protected String getCurrentDate() {
 		return new SimpleDateFormat("dd-MM-yyyy").format(Calendar.getInstance().getTime());
 	}
 

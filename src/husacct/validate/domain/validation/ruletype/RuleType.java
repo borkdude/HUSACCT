@@ -14,11 +14,12 @@ import husacct.validate.domain.validation.Message;
 import husacct.validate.domain.validation.Severity;
 import husacct.validate.domain.validation.Violation;
 import husacct.validate.domain.validation.ViolationType;
-import husacct.validate.domain.validation.internal_transfer_objects.Mapping;
-import husacct.validate.domain.validation.internal_transfer_objects.Mappings;
+import husacct.validate.domain.validation.internaltransferobjects.Mapping;
+import husacct.validate.domain.validation.internaltransferobjects.Mappings;
 import husacct.validate.domain.validation.logicalmodule.LogicalModule;
 import husacct.validate.domain.validation.logicalmodule.LogicalModules;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -26,64 +27,84 @@ public abstract class RuleType {
 	protected final String key;
 	protected final String descriptionKey;
 	protected final String categoryKey;
-	protected final EnumSet<RuleTypes> exceptionRuleKeys;	
-	protected final List<ViolationType> violationtypes;	
-	protected List<RuleType> exceptionrules;
+	protected final EnumSet<RuleTypes> exceptionRuleKeys;
+	protected final List<ViolationType> violationTypes;
+	protected List<RuleType> exceptionRules;
 	protected final Severity severity;
-
 	protected List<Violation> violations;
 	protected Mappings mappings;
 	protected List<Mapping> physicalClasspathsFrom;
-
 	protected final IAnalyseService analyseService = ServiceProvider.getInstance().getAnalyseService();
 	protected final IDefineService defineService = ServiceProvider.getInstance().getDefineService();
+	private AbstractViolationType violationTypeFactory;
 
-	private AbstractViolationType violationtypefactory;
-
-	public RuleType(String key, String categoryKey, List<ViolationType> violationtypes, EnumSet<RuleTypes> exceptionRuletypes, Severity severity){
-		this.key = key;
+	public RuleType(String key, String categoryKey, List<ViolationType> violationTypes, EnumSet<RuleTypes> exceptionRuleTypes, Severity severity) {
+		this.violations = new ArrayList<>();
+        this.key = key;
 		this.descriptionKey = key + "Description";
 		this.categoryKey = categoryKey;
-		this.violationtypes = violationtypes;
-		this.exceptionRuleKeys = exceptionRuletypes;
+		this.violationTypes = violationTypes;
+		this.exceptionRuleKeys = exceptionRuleTypes;
 		this.severity = severity;
 	}
 
-	public String getKey(){
+	public String getKey() {
 		return key;
 	}
 
-	public String getDescriptionKey(){
+	public String getDescriptionKey() {
 		return descriptionKey;
 	}
 
-	public String getCategoryKey(){
+	public String getCategoryKey() {
 		return categoryKey;
 	}
 
-	public EnumSet<RuleTypes> getExceptionRuleKeys(){
+	public EnumSet<RuleTypes> getExceptionRuleKeys() {
 		return exceptionRuleKeys;
 	}
 
-	public List<ViolationType> getViolationTypes(){
-		return violationtypes;
+	public List<ViolationType> getViolationTypes() {
+		return violationTypes;
 	}
 
-	public void setExceptionrules(List<RuleType> ruletypes){
-		this.exceptionrules = ruletypes;
+	public void setExceptionRules(List<RuleType> ruleTypes) {
+		this.exceptionRules = ruleTypes;
 	}
 
-	public List<RuleType> getExceptionrules(){
-		return exceptionrules;
+	public List<RuleType> getExceptionRules() {
+		return exceptionRules;
 	}
 
-	public Severity getSeverity(){
+	public Severity getSeverity() {
 		return severity;
 	}
 
 	public abstract List<Violation> check(ConfigurationServiceImpl configuration, RuleDTO rootRule, RuleDTO currentRule);
 
-	protected Violation createViolation(RuleDTO rootRule, Mapping classPathFrom, Mapping classPathTo, DependencyDTO dependency, ConfigurationServiceImpl configuration){
+	protected Violation createViolation(RuleDTO rootRule, Mapping classPathFrom, Mapping classPathTo, ConfigurationServiceImpl configuration) {
+		initializeViolationTypeFactory(configuration);
+		Message message = new Message(rootRule);
+
+		LogicalModule logicalModuleFrom = new LogicalModule(classPathFrom);
+		LogicalModule logicalModuleTo = new LogicalModule(classPathTo);
+		LogicalModules logicalModules = new LogicalModules(logicalModuleFrom, logicalModuleTo);
+
+		Severity severity = CheckConformanceUtilSeverity.getSeverity(configuration, this.severity, null);
+
+		Violation newViolation = new Violation();
+		newViolation = newViolation
+				.setSeverity(severity.clone())
+				.setRuletypeKey(this.key)
+				.setClassPathFrom(classPathFrom.getPhysicalPath())
+				.setClassPathTo(classPathTo.getPhysicalPath())
+				.setInDirect(false)
+				.setMessage(message)
+				.setLogicalModules(logicalModules);
+		return newViolation;
+	}
+	
+	protected Violation createViolation(RuleDTO rootRule, Mapping classPathFrom, Mapping classPathTo, DependencyDTO dependency, ConfigurationServiceImpl configuration) {
 		initializeViolationTypeFactory(configuration);
 		Message message = new Message(rootRule);
 
@@ -92,20 +113,39 @@ public abstract class RuleType {
 		LogicalModules logicalModules = new LogicalModules(logicalModuleFrom, logicalModuleTo);
 
 		final Severity violationTypeSeverity = getViolationTypeSeverity(dependency.type);
-		Severity severity = CheckConformanceUtilSeverity.getSeverity(configuration, this.severity, violationTypeSeverity);	
+		Severity severity = CheckConformanceUtilSeverity.getSeverity(configuration, this.severity, violationTypeSeverity);
 
-		return new Violation(dependency.lineNumber, severity.clone(), this.key, dependency.type, dependency.from, dependency.to, dependency.isIndirect, message, logicalModules);
+		Violation newViolation = new Violation()
+				.setLineNumber(dependency.lineNumber)
+				.setSeverity(severity.clone())
+				.setRuletypeKey(this.key)
+				.setViolationTypeKey(dependency.type)
+				.setClassPathFrom(dependency.from)
+				.setClassPathTo(dependency.to)
+				.setInDirect(dependency.isIndirect)
+				.setMessage(message)
+				.setLogicalModules(logicalModules);
+		return newViolation;
 	}
 
-	protected Violation createViolation(RuleDTO rootRule, LogicalModules logicalModules,ConfigurationServiceImpl configuration){
+	protected Violation createViolation(RuleDTO rootRule, LogicalModules logicalModules, ConfigurationServiceImpl configuration) {
 		initializeViolationTypeFactory(configuration);
 		Message message = new Message(rootRule);
 		Severity severity = CheckConformanceUtilSeverity.getSeverity(configuration, this.severity, null);
-		return new Violation(severity.clone(), this.key, false, message,logicalModules);
 
+		Violation newViolation = new Violation();
+		newViolation = newViolation
+				.setClassPathFrom(logicalModules.getLogicalModuleFrom().getLogicalModulePath())
+				.setClassPathTo(logicalModules.getLogicalModuleTo().getLogicalModulePath())
+				.setSeverity(severity.clone())
+				.setRuletypeKey(this.key)
+				.setInDirect(false)
+				.setMessage(message)
+				.setLogicalModules(logicalModules);
+		return newViolation;
 	}
 
-	protected Violation createViolation(RuleDTO rootRule, Mapping classPathFrom, ConfigurationServiceImpl configuration){
+	protected Violation createViolation(RuleDTO rootRule, Mapping classPathFrom, ConfigurationServiceImpl configuration) {
 		initializeViolationTypeFactory(configuration);
 		Message message = new Message(rootRule);
 
@@ -113,33 +153,56 @@ public abstract class RuleType {
 		LogicalModules logicalModules = new LogicalModules(logicalModuleFrom);
 
 		Severity severity = CheckConformanceUtilSeverity.getSeverity(configuration, this.severity, null);
-		return new Violation(severity.clone(), this.key, classPathFrom.getPhysicalPath(), false, message, logicalModules);
+
+		Violation newViolation = new Violation();
+		newViolation = newViolation
+				.setSeverity(severity.clone())
+				.setRuletypeKey(this.key)
+				.setClassPathFrom(classPathFrom.getPhysicalPath())
+				.setInDirect(false)
+				.setMessage(message)
+				.setLogicalModules(logicalModules);
+		return newViolation;
 	}
 
-	protected Violation createViolation(RuleDTO rootRule, Mapping classPathFrom, String violationTypeKey, ConfigurationServiceImpl configuration){
+	protected Violation createViolation(RuleDTO rootRule, Mapping classPathFrom, String violationTypeKey, ConfigurationServiceImpl configuration) {
 		initializeViolationTypeFactory(configuration);
 		Message message = new Message(rootRule);
 		LogicalModule logicalModuleFrom = new LogicalModule(classPathFrom);
 		LogicalModules logicalModules = new LogicalModules(logicalModuleFrom);
 
-		final Severity violationTypeSeverity = getViolationTypeSeverity(violationTypeKey);	
+		final Severity violationTypeSeverity = getViolationTypeSeverity(violationTypeKey);
 
 		Severity severity = CheckConformanceUtilSeverity.getSeverity(configuration, this.severity, violationTypeSeverity);
-		return new Violation(severity.clone(), this.key, violationTypeKey, classPathFrom.getPhysicalPath(), false, message, logicalModules);
+
+		Violation newViolation = new Violation();
+		newViolation = newViolation
+				.setSeverity(severity.clone())
+				.setRuletypeKey(this.key)
+				.setViolationTypeKey(violationTypeKey)
+				.setClassPathFrom(classPathFrom.getPhysicalPath())
+				.setInDirect(false)
+				.setMessage(message)
+				.setLogicalModules(logicalModules);
+		return newViolation;
 	}
 
-	private void initializeViolationTypeFactory(ConfigurationServiceImpl configuration){
-		if(violationtypefactory == null){
-			this.violationtypefactory = new ViolationTypeFactory().getViolationTypeFactory(configuration);
+	private void initializeViolationTypeFactory(ConfigurationServiceImpl configuration) {
+		if (violationTypeFactory == null) {
+			this.violationTypeFactory = new ViolationTypeFactory().getViolationTypeFactory(configuration);
 		}
 	}
 
-	private Severity getViolationTypeSeverity(String violationTypeKey){
-		try{
-			return violationtypefactory.createViolationType(this.key, violationTypeKey).getSeverity();
-		}catch(ViolationTypeNotFoundException e){
-
+	private Severity getViolationTypeSeverity(String violationTypeKey) {
+		try {
+			return violationTypeFactory.createViolationType(this.key, violationTypeKey).getSeverity();
+		} catch (ViolationTypeNotFoundException e) {
+			e.printStackTrace();
 		}
 		return null;
+	}
+
+	public boolean equals(RuleTypes desiredRuleType) {
+		return this.getKey().equals(desiredRuleType.toString());
 	}
 }
